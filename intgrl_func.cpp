@@ -4,8 +4,8 @@
 
 double f(double x, double y)
 {
-    //return y - x * x * (x - 3.0); //1
-    return 1; //2
+    return y - x * x * (x - 3.0); //1
+    //return 1; //2
 }
 
 void readFile(std::istream& stream, InData& data)
@@ -69,10 +69,15 @@ int processFile(std::istream& inStream, std::ostream& outStream)
             printStep(outStream, x, y, localError);
             stepsCount++;
 
+            if (localError < data.eps / 4) {
+                h *= 2.0;
+            }
+
             if (data.direction == LR && endPoint - (x + h) < data.hmin || data.direction == RL && x - (endPoint + h) < data.hmin) {
                 if (data.direction == LR && endPoint - x >= 2.0 * data.hmin || data.direction == RL && x - endPoint >= 2.0 * data.hmin) {
+                    double oldx = x;
                     x = (data.direction == LR) ? endPoint - data.hmin : endPoint + data.hmin;
-                    y = rungeK2(x, y, h);
+                    y = rungeK2(x, y, x - oldx);
                     printStep(outStream, x, y, localError);
                 } else if (data.direction == LR && endPoint - x <= 1.5 * data.hmin || data.direction == RL && x - endPoint <= 1.5 * data.hmin) {
                     x = endPoint;
@@ -83,8 +88,9 @@ int processFile(std::istream& inStream, std::ostream& outStream)
                     y = rungeK2(x, y, h);
                     printStep(outStream, x, y, localError);
                 }
+                double oldx = x;
                 x = endPoint;
-                y = rungeK2(x, y, h);
+                y = rungeK2(x, y, x - oldx);
                 printStep(outStream, x, y, localError);
             }
             else {
