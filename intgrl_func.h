@@ -2,8 +2,9 @@
 #include <fstream>
 #include <string>
 #include <iomanip>
+#include <iostream>
 
-float f(float x, float y);
+double f(double x, double y);
 
 enum Direction
 {
@@ -12,17 +13,17 @@ enum Direction
 
 struct InData
 {
-	float A, B, C, yc;
-	float hmin, eps;
+	double A, B, C, yc;
+	double hmin, eps;
 	Direction direction;
 };
 
 void readFile(std::istream& stream, InData& data);
 
-float rungeK2(float x, float y, float h);
+double rungeK2(double x, double y, double h);
 
-float rungeK3(float x, float y, float h);
+double rungeK3(double x, double y, double h);
 
 int processFile(std::istream& inStream, std::ostream& outStream);
 
-void printStep(std::ostream& stream, float x, float y, float localError);
+void printStep(std::ostream& stream, double x, double y, double localError);

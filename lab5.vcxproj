@@ -134,7 +134,8 @@
     <ClInclude Include="intgrl_func.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="exmpl.txt" />
+    <Text Include="exmpl1.txt" />
+    <Text Include="exmpl2.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
