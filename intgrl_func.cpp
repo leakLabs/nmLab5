@@ -2,7 +2,7 @@
 
 #define OUT_FIELD_WIDTH 15
 
-double f(double x, double y)
+double func(double x, double y)
 {
     //return y - x * x * (x - 3.0); //1
     return 2 * x; //2
@@ -22,14 +22,14 @@ void readFile(std::istream& stream, InData& data)
         throw std::string{ "A > B" };
 }
 
-double rungeK2(double x, double y, double h)
+double rungeK2(double x, double y, double h, double (*f)(double, double))
 {
     double k1 = h * f(x, y);
     double k2 = h * f(x + h, y + k1);
     return y + 0.5 * (k1 + k2);
 }
 
-double rungeK3(double x, double y, double h)
+double rungeK3(double x, double y, double h, double (*f)(double, double))
 {
     double k1 = h * f(x, y);
     double k2 = h * f(x + 0.5 * h, y + 0.5 * k1);
@@ -37,7 +37,7 @@ double rungeK3(double x, double y, double h)
     return y + 1.0 / 6.0 * (k1 + 4 * k2 + k3);
 }
 
-int processFile(std::istream& inStream, std::ostream& outStream)
+int processFile(std::istream& inStream, std::ostream& outStream, double (*xyFunc)(double, double))
 {
     InData data;
     readFile(inStream, data);
@@ -60,24 +60,12 @@ int processFile(std::istream& inStream, std::ostream& outStream)
     double localError = 0;
     while (data.direction == LR && x<endPoint || data.direction == RL && x>endPoint) {
         //std::cout << "H: " << h << '\n';
-        double y2 = rungeK2(x, y, h);
-        double y3 = rungeK3(x, y, h);
+        double y2 = rungeK2(x, y, h, xyFunc);
+        double y3 = rungeK3(x, y, h, xyFunc);
         localError = abs(y3 - y2);
 
         if (localError < data.eps) {
             icod = 0;
-            
-            //if (stepsCount != 0) {
-            //    //y = y2;
-            //    printStep(outStream, x, y, localError);
-            //}
-            /*printStep(outStream, x, y, localError);
-            y = y2;
-            stepsCount++;*/
-
-            /*if (localError < data.eps / 4) {
-                h *= 2.0;
-            }*/
 
             if (data.direction == LR && endPoint - (x + h) < data.hmin || data.direction == RL && x + h - endPoint < data.hmin) {
                 //std::cout << "H: " << h << '\n';
@@ -85,9 +73,8 @@ int processFile(std::istream& inStream, std::ostream& outStream)
                 if (data.direction == LR && endPoint - x >= 2.0 * data.hmin || data.direction == RL && x - endPoint >= 2.0 * data.hmin) {
                     double oldx = x;
                     x = (data.direction == LR) ? endPoint - data.hmin : endPoint + data.hmin;
-                    double ynew = rungeK2(oldx, y, x - oldx);
-                    printStep(outStream, x, ynew, localError);
-                    y = ynew;
+                    y = rungeK2(oldx, y, x - oldx, xyFunc);
+                    printStep(outStream, x, y, localError);
                 } else if (data.direction == LR && endPoint - x <= 1.5 * data.hmin || data.direction == RL && x - endPoint <= 1.5 * data.hmin) {
                     x = x;
                 }
@@ -95,14 +82,13 @@ int processFile(std::istream& inStream, std::ostream& outStream)
                     || (data.direction == RL && x - endPoint > 1.5 * data.hmin && x - endPoint < 2.0 * data.hmin)) {
                     double oldx = x;
                     x = (data.direction == LR) ? x + (endPoint - x) / 2.0 : x - (x - endPoint) / 2.0;
-                    double ynew = rungeK2(oldx, y, x - oldx);
-                    printStep(outStream, x, ynew, localError);
+                    y = rungeK2(oldx, y, x - oldx, xyFunc);
+                    printStep(outStream, x, y, localError);
                 }
                 double oldx = x;
                 x = endPoint;
-                double ynew = rungeK2(oldx, y, x - oldx);
-                printStep(outStream, x, ynew, localError);
-                y = ynew;
+                y = rungeK2(oldx, y, x - oldx, xyFunc);
+                printStep(outStream, x, y, localError);
             }
             else {
                 printStep(outStream, x, y, localError);
@@ -119,8 +105,8 @@ int processFile(std::istream& inStream, std::ostream& outStream)
             while (localError > data.eps)
             {
                 h /= 2.0;
-                y2 = rungeK2(x, y, h);
-                y3 = rungeK3(x, y, h);
+                y2 = rungeK2(x, y, h, xyFunc);
+                y3 = rungeK3(x, y, h, xyFunc);
                 localError = abs(y3 - y2);
                 icod = 0;
             }
@@ -129,12 +115,16 @@ int processFile(std::istream& inStream, std::ostream& outStream)
                 h *= 2.0;
             }
 
-            if (h < data.hmin) {
+            if (data.direction == LR && h < data.hmin) {
                 h = data.hmin;
                 icod = 1;
             }
+            else if (data.direction == RL && h > -data.hmin) {
+                h = -data.hmin;
+                icod = 1;
+            }
 
-            y2 = rungeK2(x, y, h);
+            y2 = rungeK2(x, y, h, xyFunc);
             //std::cout << "error\n";
             printStep(outStream, x, y, localError);
 
@@ -148,5 +138,6 @@ int processFile(std::istream& inStream, std::ostream& outStream)
 
 void printStep(std::ostream& stream, double x, double y, double localError)
 {
-    stream << std::left << std::setw(OUT_FIELD_WIDTH) << x << std::setw(OUT_FIELD_WIDTH) << y << std::setw(OUT_FIELD_WIDTH) << localError << std::endl;
+    //stream << std::left << std::setw(OUT_FIELD_WIDTH) << x << std::setw(OUT_FIELD_WIDTH) << y << std::setw(OUT_FIELD_WIDTH) << localError << std::endl;
+    stream << x << '\t' << y << '\t' << localError << std::endl;
 }

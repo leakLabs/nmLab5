@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <iostream>
 
-double f(double x, double y);
+double func(double x, double y);
 
 enum Direction
 {
@@ -20,10 +20,10 @@ struct InData
 
 void readFile(std::istream& stream, InData& data);
 
-double rungeK2(double x, double y, double h);
+double rungeK2(double x, double y, double h, double (*f)(double, double));
 
-double rungeK3(double x, double y, double h);
+double rungeK3(double x, double y, double h, double (*f)(double, double));
 
-int processFile(std::istream& inStream, std::ostream& outStream);
+int processFile(std::istream& inStream, std::ostream& outStream, double (*f)(double, double));
 
 void printStep(std::ostream& stream, double x, double y, double localError);

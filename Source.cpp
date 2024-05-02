@@ -14,7 +14,7 @@ int main() {
 		std::cerr << "Îøèáêà ğàáîòû ñ ôàéëàìè\n";
 	} else {
 		try {
-			cout<< "\nIer: " << processFile(in, cout) << '\n';
+			cout<< "\nIcod: " << processFile(in, cout, func) << '\n';
 		}
 		catch (std::string& s) {
 			cout << "Îøèáêà: " << s << '\n';
